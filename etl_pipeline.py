@@ -15,22 +15,30 @@ def transformar_dados(df, ticker_nome):
     print(f"Limpando e transformando dados de: {ticker_nome}...")
     
     # 1. (USAR A IA): A data está no índice do DataFrame. Transforme-a em uma coluna normal.
-    # df = ...
+    df = df.reset_index()
     
     # 2. (MISSÃO): Adicione uma nova coluna chamada 'ativo' e coloque o valor da variável ticker_nome nela.
-    # df['ativo'] = ...
+    df['ativo'] = ticker_nome
 
     # 3. (MISSÃO): Renomeie as colunas para o português, exatamente como está na tabela do banco de dados (preco_abertura, etc).
-    # df.rename(...)
+    df = df.rename(columns={
+    'Date': 'data',
+    'Open': 'preco_abertura',
+    'High': 'preco_maximo',
+    'Low': 'preco_minimo',
+    'Close': 'preco_fechamento',
+    'Volume': 'volume'
+    })
     
     # 4. (MISSÃO): Exclua qualquer linha que tenha valores nulos (NaN).
-    # df = ...
+    df = df.dropna()
 
     # 5. (USAR A IA): Calcule a média móvel de 7 dias baseada na coluna preco_fechamento e salve na coluna media_movel_7d.
-    # df['media_movel_7d'] = ...
+    df['media_movel_7d'] = df['preco_fechamento'].rolling(window=7).mean()
 
     # 6. (MISSÃO): Arredonde todas as colunas de preços para 4 casas decimais.
-    # df = ...
+    colunas_preco = ['preco_abertura', 'preco_maximo', 'preco_minimo', 'preco_fechamento', 'media_movel_7d']
+    df[colunas_preco] = df[colunas_preco].round(4)
 
     return df
 
