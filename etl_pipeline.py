@@ -30,10 +30,27 @@ def montar_prompt(variacoes):
         linhas.append(f"- {ativo}: {sinal} {abs(variacao)}%")
     dados_formatados = "\n".join(linhas)
 
-    prompt = f"""Atue como um analista financeiro. Os dados de hoje são:
-{dados_formatados}
+    prompt = f"""Atue como um analista financeiro especializado no mercado brasileiro.
 
-Escreva um resumo curto em português explicando o que isso significa para um investidor brasileiro."""
+    Aqui estão exemplos de como você deve responder para cada ativo:
+
+    Exemplo 1:
+    Dado: BTC-USD subiu 3.5%
+    Resposta: ALTA - O Bitcoin subiu 3.5%, reforçando o apetite por ativos de risco.
+
+    Exemplo 2:
+    Dado: MXRF11.SA caiu 1.2%
+    Resposta: QUEDA - O fundo imobiliário MXRF11 caiu 1.2%, possivelmente refletindo expectativa de alta na taxa de juros.
+
+    Agora, com os dados reais de hoje:
+    {dados_formatados}
+
+    Pense passo a passo antes de responder:
+    1. Primeiro, analise os números brutos de cada ativo.
+    2. Segundo, identifique o contexto macroeconômico ou setorial que explica esse movimento.
+    3. Terceiro, redija o resumo final, seguindo EXATAMENTE o formato dos exemplos (ALTA/QUEDA - explicação).
+
+    Na resposta, mostre apenas o resultado final (um parágrafo curto por ativo, no formato do exemplo) — não mostre seu raciocínio passo a passo."""
     return prompt
 
 
