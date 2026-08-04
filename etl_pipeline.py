@@ -106,30 +106,33 @@ def transformar_dados(df, ticker_nome):
 
     return df
 
-# --- FLUXO PRINCIPAL ---
-if __name__ == "__main__":
+def gerar_analise():
     ativos = ['BTC-USD', 'MXRF11.SA']
     lista_dfs = []
-    
+        
     for ativo in ativos:
         dados_brutos = extrair_dados(ativo)
         dados_limpos = transformar_dados(dados_brutos, ativo)
         lista_dfs.append(dados_limpos)
-        
+            
     df_final = pd.concat(lista_dfs, ignore_index=True)
     variacoes = calcular_variacao(df_final)
     prompt = montar_prompt(variacoes)
     resumo = chamar_llm(prompt)
 
-    print("\n--- RESUMO DA IA ---")
-    print(resumo)
+    return {
+        "resumo": resumo,
+        "variacoes": variacoes
+    }
 
-    print("\nVariações calculadas:", variacoes)
-    print("Formato final:", df_final.shape)
-    print("\nTipos de dado:\n", df_final.dtypes)
-    print("\nValores nulos por coluna:\n", df_final.isna().sum())
-    print("\nContagem de linhas por ativo:\n", df_final['ativo'].value_counts())
-    print("\nAlgumas linhas de cada ativo:")
-    print(df_final.groupby('ativo').head(3))
+# --- FLUXO PRINCIPAL ---
+if __name__ == "__main__":
+    
+    resultado = gerar_analise()
+
+    print("\n--- RESUMO DA IA ---")
+    print(resultado["resumo"])
+    print("\nVariações calculadas:", resultado["variacoes"])
+    
     
 
