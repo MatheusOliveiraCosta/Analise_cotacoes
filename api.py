@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from etl_pipleine import gerar_analise
+from etl_pipeline import gerar_analise
 
 app = FastAPI()
 
-app.add_middleware(CORSMiddleware, allow_origens["http//localhost:5173", "http://localhost:3000"], allow_methods=["*"], allow_headers=["*"],)
+app.add_middleware(CORSMiddleware, allow_origins=["http//localhost:5173", "http://localhost:3000"], allow_methods=["*"], allow_headers=["*"],)
 
 class AnaliseResponse(BaseModel):
     resumo: str
