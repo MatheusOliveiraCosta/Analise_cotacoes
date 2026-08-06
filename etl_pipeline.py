@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 from dotenv import load_dotenv
 from groq import Groq
+from db import criar_tabelas, salvar_resultado
 
 load_dotenv()
 
@@ -107,6 +108,7 @@ def transformar_dados(df, ticker_nome):
     return df
 
 def gerar_analise():
+    criar_tabelas()
     ativos = ['BTC-USD', 'MXRF11.SA']
     lista_dfs = []
         
