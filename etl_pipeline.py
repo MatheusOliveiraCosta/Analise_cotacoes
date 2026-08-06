@@ -122,9 +122,12 @@ def gerar_analise():
     prompt = montar_prompt(variacoes)
     resumo = chamar_llm(prompt)
 
+    variacoes_nativas = {ativo: float(valor) for ativo, valor in variacoes.items()}
+    salvar_resultado(df_final, resumo, variacoes_nativas)
+
     return {
         "resumo": resumo,
-        "variacoes": variacoes
+        "variacoes": variacoes_nativas
     }
 
 # --- FLUXO PRINCIPAL ---

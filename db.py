@@ -40,7 +40,7 @@ def salvar_resultado(df_final, resumo, variacoes):
     session = SessionLocal()
     try:
         session.query(Cotacao).delete()
-        for _, row in df_final.iterrowns():
+        for _, row in df_final.iterrows():
             session.add(Cotacao(data_pregao=row['data'],
                                 ativo=row['ativo'],
                                 preco_abertura=row['preco_abertura'],
