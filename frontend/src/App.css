@@ -1,0 +1,86 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0a0c10;
+  color: #e6e8eb;
+  font-family: -apple-system, "Segoe UI", Inter, sans-serif;
+}
+
+.painel {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+
+.painel-header {
+  margin-bottom: 2.5rem;
+}
+
+.painel-eyebrow {
+  display: block;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8b94a3;
+  margin-bottom: 0.4rem;
+}
+
+.painel h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.estado { color: #8b94a3; }
+.estado.erro { color: #e5534b; }
+
+.cards {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.card {
+  flex: 1;
+  min-width: 180px;
+  background: #14171c;
+  border: 1px solid #262b33;
+  border-radius: 8px;
+  padding: 1.25rem;
+  border-left: 3px solid transparent;
+}
+
+.card.alta { border-left-color: #3fb97c; }
+.card.queda { border-left-color: #e5534b; }
+
+.ticker {
+  display: block;
+  font-size: 0.85rem;
+  color: #8b94a3;
+  margin-bottom: 0.5rem;
+}
+
+.variacao {
+  display: block;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.card.alta .variacao { color: #3fb97c; }
+.card.queda .variacao { color: #e5534b; }
+
+.resumo {
+  border-top: 1px solid #262b33;
+  padding-top: 1.5rem;
+  line-height: 1.6;
+  color: #c4c9d1;
+}
+
+.resumo p {
+  margin: 0 0 0.9rem 0;
+}
