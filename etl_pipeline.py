@@ -4,56 +4,28 @@ from dotenv import load_dotenv
 from groq import Groq
 from db import criar_tabelas, salvar_resultado
 import os
+import json
+from indicadores import ATIVOS, calcular
 
 load_dotenv()
 
-
-def calcular_variacao(df):
-    """Retorna a variação % do último fechamento vs o penúltimo, por ativo."""
-    variacoes = {}
-    for ativo, grupo in df.groupby('ativo'):
-        grupo = grupo.sort_values('data')
-        ultimo = grupo['preco_fechamento'].iloc[-1]
-        penultimo = grupo['preco_fechamento'].iloc[-2]
-        variacao_pct = ((ultimo - penultimo) / penultimo) * 100
-        variacoes[ativo] = round(variacao_pct, 2)
-    return variacoes
-
-
 def montar_prompt(variacoes):
-    linhas = []
-    for ativo, variacao in variacoes.items():
-        if variacao > 0:
-            sinal = "subiu"
-        elif variacao < 0:
-            sinal = "caiu"
-        else:
-            sinal = "manteve-se estável"
-        linhas.append(f"- {ativo}: {sinal} {abs(variacao)}%")
-    dados_formatados = "\n".join(linhas)
+    linhas = [
+        f"- {m['ticker']} ({m['nome']}): preço {m['preco']} {m['moeda']}, "
+        f"variaçãoi do dia {m['var_pct']}%, RSI14 {m['rsi']}, MA20 {m['ma20']}, "
+        f"MA50 {m['ma50']}, volume z-score {m['vol_z']}, sinal técnico {m['sinal']}"
+        for m in metricas
+    ]
+    dados = "\n".join(linhas)
+    return f"""Atue como um analista financeiro especializado no mercado brasileiro.
 
-    prompt = f"""Atue como um analista financeiro especializado no mercado brasileiro.
+Dados de hoje:
+{dados}
 
-    Aqui estão exemplos de como você deve responder para cada ativo:
+Responda SOMENTE um JSON com uma chave para cada ticker acima neste formato:
+{{"TICKER": {{"resumo": "1-2 frases sobre o movimento", "drivers": "1-2 frases sobr oque os indicadores mostram", "risco": "1-2 frases sobre riscos" }}}}
 
-    Exemplo 1:
-    Dado: BTC-USD subiu 3.5%
-    Resposta: ALTA - O Bitcoin subiu 3.5%, reforçando o apetite por ativos de risco.
-
-    Exemplo 2:
-    Dado: MXRF11.SA caiu 1.2%
-    Resposta: QUEDA - O fundo imobiliário MXRF11 caiu 1.2%, possivelmente refletindo expectativa de alta na taxa de juros.
-
-    Agora, com os dados reais de hoje:
-    {dados_formatados}
-
-    Pense passo a passo antes de responder:
-    1. Primeiro, analise os números brutos de cada ativo.
-    2. Segundo, identifique o contexto macroeconômico ou setorial que explica esse movimento.
-    3. Terceiro, redija o resumo final, seguindo EXATAMENTE o formato dos exemplos (ALTA/QUEDA - explicação).
-
-    Na resposta, mostre apenas o resultado final (um parágrafo curto por ativo, no formato do exemplo) — não mostre seu raciocínio passo a passo."""
-    return prompt
+Use apenas os dados fornecidos. Não invente notícias, eventos ou números."""
 
 
 def chamar_llm(prompt):
@@ -61,11 +33,10 @@ def chamar_llm(prompt):
     MODELO  = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
     resposta = client.chat.completions.create(
         model=MODELO,
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
+        messages=[{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"},
     )
-    return resposta.choices[0].message.content
+    return json.loads(resposta.choices[0].message.content)
 
 def extrair_dados(ticker):
     print(f"Extraindo dados de: {ticker}...")
@@ -111,21 +82,15 @@ def transformar_dados(df, ticker_nome):
 
 def gerar_analise():
     criar_tabelas()
-    ativos = ['BTC-USD', 'MXRF11.SA']
-    lista_dfs = []
-        
-    for ativo in ativos:
-        dados_brutos = extrair_dados(ativo)
-        dados_limpos = transformar_dados(dados_brutos, ativo)
-        lista_dfs.append(dados_limpos)
-            
-    df_final = pd.concat(lista_dfs, ignore_index=True)
-    variacoes = calcular_variacao(df_final)
-    prompt = montar_prompt(variacoes)
-    resumo = chamar_llm(prompt)
+    dfs = [transforar_dados(extrair_dados(t), t) for t in ATIVOS]
+    df_final = pd.concat(dfs, ignore_index=True)
 
-    variacoes_nativas = {ativo: float(valor) for ativo, valor in variacoes.items()}
-    salvar_resultado(df_final, resumo, variacoes_nativas)
+    metricas = [calcular(g, t) for t, g in df_final.groupby("ativo")]
+    detalhes = chamar_llm(montar_prompt(metricas))
+
+    variacoes = {m["ticker"]: m["var_pct"] for m in metricas}
+    resumo = "\n".join(f"{t}: {d.get('resumo', '')}" for t, d in detalhes.items())
+    salvar_resultado (df_final, resumo, variacoes, detalhes)
 
     return {
         "resumo": resumo,
@@ -140,6 +105,3 @@ if __name__ == "__main__":
     print("\n--- RESUMO DA IA ---")
     print(resultado["resumo"])
     print("\nVariações calculadas:", resultado["variacoes"])
-    
-    
-

@@ -23,15 +23,16 @@ class Cotacao(Base):
     preco_maximo: Mapped[float] = mapped_column(Float)
     preco_minimo: Mapped[float] = mapped_column(Float)
     preco_fechamento: Mapped[float] = mapped_column(Float)
-    volume_negociado: Mapped[int] = mapped_column(Integer)
+    volume_negociado: Mapped[int] = mapped_column(BigInteger)
     media_movel_7d: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 class Analise(Base):
     __tablename__= "analises"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    resumo: Mapped[str] = mapped_column(String(2000))
+    resumo: Mapped[str] = mapped_column(Text)
     variacoes: Mapped[dict] = mapped_column(JSON)
+    detalhes: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 def criar_tabelas():
     Base.metadata.create_all(engine)
@@ -50,7 +51,7 @@ def salvar_resultado(df_final, resumo, variacoes):
                                 volume_negociado=int(row['volume']),
                                 media_movel_7d=None if pd.isna(row['media_movel_7d']) else float(row['media_movel_7d'])
                                 ))
-        session.add(Analise(resumo=resumo, variacoes=variacoes))
+        session.add(Analise(resumo=resumo, variacoes=variacoes, detalhes=detalhes))
         session.commit()
     finally:
         session.close()
