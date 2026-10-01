@@ -3,6 +3,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from groq import Groq
 from db import criar_tabelas, salvar_resultado
+import os
 
 load_dotenv()
 
@@ -56,9 +57,10 @@ def montar_prompt(variacoes):
 
 
 def chamar_llm(prompt):
-    client = Groq()  # lê a GROQ_API_KEY do ambiente automaticamente
+    client = Groq()
+    MODELO  = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
     resposta = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=MODELO,
         messages=[
             {"role": "user", "content": prompt}
         ]
