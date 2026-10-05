@@ -105,8 +105,10 @@ function Resumo({ ativos }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <CartaoAtivo titulo="Maior alta do dia" a={melhor} />
         <CartaoAtivo titulo="Maior queda do dia" a={pior} />
-        <div className="bg-surface-container rounded-lg p-4 text-on-surface-variant text-data-table font-data-table">
-          <span className="text-secondary font-bold">▲ verde</span> = subiu · <span className="text-error font-bold">▼ vermelho</span> = caiu · <span className="font-bold">● cinza</span> = estável
+        <div className="bg-surface-container rounded-lg p-4 text-on-surface-variant text-data-table font-data-table" style={{display: "flex", flexDirection: "column"}}>
+          <span className="text-secondary font-bold" style={{whiteSpace: 'nowrap', paddingBottom: "5px"}}>▲ = subiu</span>
+          <span className="text-error font-bold" style={{whiteSpace: 'nowrap', paddingBottom: "5px"}}>▼  = caiu</span>
+          <span className="font-bold" style={{whiteSpace: 'nowrap', paddingBottom: "5px"}}>● estável</span>
         </div>
       </div>
     </section>
