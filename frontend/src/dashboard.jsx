@@ -8,16 +8,27 @@ const TONS = {
   down: { texto: "text-error", suave: "bg-error/10 text-error", forte: "bg-error/20 text-error", traco: "#ffb4ab" },
   flat: { texto: "text-on-surface-variant", suave: "bg-surface-container-high text-on-surface-variant", forte: "bg-surface-container-high text-on-surface-variant", traco: "#9cf0ff" },
 };
-const tom = (v) => (v > 0 ? "up" : v < 0 ? "down" : "flat");
-const seta = (v) => (v > 0 ? "▲" : v < 0 ? "▼" : "●");
+function tom(v) {
+  if (v > 0) return "up";
+  if (v < 0) return "down";
+  return "flat";
+}
+function seta(v) {
+  if (v > 0) return "▲";
+  if (v < 0) return "▼";
+  return "●";
+}
 const SINAIS = {
   ALTA: { tom: "up", texto: "Tendência de alta", curto: "Subindo" },
   QUEDA: { tom: "down", texto: "Tendência de queda", curto: "Caindo" },
   NEUTRO: { tom: "flat", texto: "Sem tendência clara", curto: "Estável" },
 };
 
-const moeda = (v, m) =>
-  v == null ? "—" : new Intl.NumberFormat(m === "BRL" ? "pt-BR" : "en-US", { style: "currency", currency: m }).format(v);
+function moeda(v, m) {
+  if (v == null) return "—";
+  const locale = m === "BRL" ? "pt-BR" : "en-US";
+  return new Intl.NumberFormat(locale, { style: "currency", currency: m }).format(v);
+}
 const num = (v, d = 2) => (v == null ? "—" : v.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }));
 const pct = (v) => `${v > 0 ? "+" : ""}${num(v)}%`;
 const dataBR = (iso) => new Date(iso).toLocaleDateString("pt-BR");
@@ -57,21 +68,30 @@ function Grafico({ serie, traco }) {
   );
 }
 
-function Resumo({ ativos }) {
-  const ord = [...ativos].sort((a, b) => b.var_pct - a.var_pct);
-  const melhor = ord[0], pior = ord[ord.length - 1];
-  const subiram = ativos.filter((a) => a.var_pct > 0).length;
-  const caíram = ativos.filter((a) => a.var_pct < 0).length;
-  const alta = ativos.filter((a) => a.sinal === "ALTA").length;
-  const queda = ativos.filter((a) => a.sinal === "QUEDA").length;
-  const [clima, t] = alta > queda ? ["Mercado otimista", "up"] : queda > alta ? ["Mercado cauteloso", "down"] : ["Mercado misto", "flat"];
-  const Cartao = ({ titulo, a }) => (
+function climaDoMercado(alta, queda) {
+  if (alta > queda) return ["Mercado otimista", "up"];
+  if (queda > alta) return ["Mercado cauteloso", "down"];
+  return ["Mercado misto", "flat"];
+}
+
+function CartaoAtivo({ titulo, a }) {
+  return (
     <div className="bg-surface-container rounded-lg p-4 flex flex-col gap-1">
       <span className="text-data-label font-data-label text-outline uppercase">{titulo}</span>
       <span className="text-on-surface font-bold">{a.nome}</span>
       <span className={`font-bold ${TONS[tom(a.var_pct)].texto}`}>{seta(a.var_pct)} {pct(a.var_pct)} hoje</span>
     </div>
   );
+}
+
+function Resumo({ ativos }) {
+  const ord = [...ativos].sort((a, b) => b.var_pct - a.var_pct);
+  const melhor = ord[0], pior = ord.at(-1);
+  const subiram = ativos.filter((a) => a.var_pct > 0).length;
+  const caíram = ativos.filter((a) => a.var_pct < 0).length;
+  const alta = ativos.filter((a) => a.sinal === "ALTA").length;
+  const queda = ativos.filter((a) => a.sinal === "QUEDA").length;
+  const [clima, t] = climaDoMercado(alta, queda);
   return (
     <section className="bg-surface-container-low rounded-xl p-6 flex flex-col gap-4 shadow-md">
       <div className="flex flex-col gap-1">
@@ -83,8 +103,8 @@ function Resumo({ ativos }) {
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Cartao titulo="Maior alta do dia" a={melhor} />
-        <Cartao titulo="Maior queda do dia" a={pior} />
+        <CartaoAtivo titulo="Maior alta do dia" a={melhor} />
+        <CartaoAtivo titulo="Maior queda do dia" a={pior} />
         <div className="bg-surface-container rounded-lg p-4 text-on-surface-variant text-data-table font-data-table">
           <span className="text-secondary font-bold">▲ verde</span> = subiu · <span className="text-error font-bold">▼ vermelho</span> = caiu · <span className="font-bold">● cinza</span> = estável
         </div>
@@ -142,57 +162,80 @@ function Tabela({ titulo, icone, explicacao, itens, sel, onSel }) {
   );
 }
 
-function PainelIA({ ia, erro }) {
-  const Bloco = ({ titulo, texto }) => (
+function Bloco({ titulo, texto }) {
+  return (
     <div className="flex flex-col gap-1 p-3 rounded bg-surface-container-low">
       <span className="text-data-label font-data-label text-outline uppercase">{titulo}</span>
       <p className="text-on-surface-variant text-data-table font-data-table">{texto}</p>
     </div>
   );
+}
+
+function ConteudoIA({ ia, erro }) {
+  if (erro) return <p className="text-error">Ainda não há explicação para este ativo ({erro}).</p>;
+  if (!ia) return <p className="text-outline animate-pulse">Preparando explicação...</p>;
+  return (
+    <>
+      <Bloco titulo="O que aconteceu" texto={ia.resumo} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Bloco titulo="O que os números mostram" texto={ia.drivers} />
+        <Bloco titulo="Pontos de atenção" texto={ia.risco} />
+      </div>
+    </>
+  );
+}
+
+function PainelIA({ ia, erro }) {
   return (
     <div className="bg-surface-container rounded-lg p-5 flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <span className="material-symbols-outlined text-primary text-[20px]">psychology</span>
         <span className="text-data-label font-data-label font-bold tracking-wider text-primary uppercase">Em palavras simples (gerado por IA)</span>
       </div>
-      {erro ? <p className="text-error">Ainda não há explicação para este ativo ({erro}).</p>
-        : !ia ? <p className="text-outline animate-pulse">Preparando explicação...</p>
-        : (
-          <>
-            <Bloco titulo="O que aconteceu" texto={ia.resumo} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Bloco titulo="O que os números mostram" texto={ia.drivers} />
-              <Bloco titulo="Pontos de atenção" texto={ia.risco} />
-            </div>
-          </>
-        )}
+      <ConteudoIA ia={ia} erro={erro} />
     </div>
   );
 }
 
-function Tecnicos({ a, m }) {
-  const rsiTxt = a.rsi == null ? "Sem dados suficientes."
-    : a.rsi >= 70 ? "Alto: subiu rápido demais e pode esfriar."
-    : a.rsi <= 30 ? "Baixo: caiu bastante e pode reagir."
-    : "Normal: sem exagero de compra ou venda.";
-  const maTxt = a.ma20 == null ? "Sem dados suficientes."
-    : a.preco > a.ma20 ? "O preço está acima da média recente (sinal positivo)." : "O preço está abaixo da média recente (sinal negativo).";
-  const volTxt = a.vol_z == null ? "Sem dados." : a.vol_z > 1 ? "Muita gente negociando: acima do normal."
-    : a.vol_z < -1 ? "Pouca negociação: abaixo do normal." : "Movimento de negociação normal.";
-  const Linha = ({ nome, valor, txt }) => (
+function textoRsi(rsi) {
+  if (rsi == null) return "Sem dados suficientes.";
+  if (rsi >= 70) return "Alto: subiu rápido demais e pode esfriar.";
+  if (rsi <= 30) return "Baixo: caiu bastante e pode reagir.";
+  return "Normal: sem exagero de compra ou venda.";
+}
+
+function textoMedia(preco, ma20) {
+  if (ma20 == null) return "Sem dados suficientes.";
+  return preco > ma20
+    ? "O preço está acima da média recente (sinal positivo)."
+    : "O preço está abaixo da média recente (sinal negativo).";
+}
+
+function textoVolume(vz) {
+  if (vz == null) return "Sem dados.";
+  if (vz > 1) return "Muita gente negociando: acima do normal.";
+  if (vz < -1) return "Pouca negociação: abaixo do normal.";
+  return "Movimento de negociação normal.";
+}
+
+function Linha({ nome, valor, txt }) {
+  return (
     <div className="flex flex-col gap-0.5 py-2">
       <div className="flex justify-between"><span className="text-on-surface font-bold">{nome}</span><span className="text-on-surface">{valor}</span></div>
       <span className="text-on-surface-variant">{txt}</span>
     </div>
   );
+}
+
+function Tecnicos({ a, m }) {
   return (
     <details className="bg-surface-container rounded-lg p-4 text-data-table font-data-table">
       <summary className="cursor-pointer text-primary font-bold">Quer se aprofundar? Ver indicadores técnicos</summary>
       <div className="divide-y divide-outline-variant/20 mt-2">
-        <Linha nome="Média dos últimos 20 dias" valor={m(a.ma20)} txt={maTxt} />
+        <Linha nome="Média dos últimos 20 dias" valor={m(a.ma20)} txt={textoMedia(a.preco, a.ma20)} />
         <Linha nome="Média dos últimos 50 dias" valor={m(a.ma50)} txt="Mostra o preço médio de médio prazo, para comparar com o preço de hoje." />
-        <Linha nome="RSI (força da alta ou queda)" valor={num(a.rsi, 1)} txt={rsiTxt} />
-        <Linha nome="Volume de negociação" valor={`${a.vol_z > 0 ? "+" : ""}${num(a.vol_z)}`} txt={volTxt} />
+        <Linha nome="RSI (força da alta ou queda)" valor={num(a.rsi, 1)} txt={textoRsi(a.rsi)} />
+        <Linha nome="Volume de negociação" valor={`${a.vol_z > 0 ? "+" : ""}${num(a.vol_z)}`} txt={textoVolume(a.vol_z)} />
       </div>
     </details>
   );
@@ -200,7 +243,9 @@ function Tecnicos({ a, m }) {
 
 function Detalhe({ a }) {
   const [intervalo, setIntervalo] = useState("1M");
-  const [serie, setSerie] = useState(null);
+  const [resSerie, setResSerie] = useState({ chave: "", dados: null });
+  const chave = `${a.ticker}|${intervalo}`;
+  const serie = resSerie.chave === chave ? resSerie.dados : null; // null = carregando
   const [ia, setIa] = useState(null);
   const [erroIa, setErroIa] = useState(null);
   const t = TONS[tom(a.var_pct)];
@@ -209,14 +254,14 @@ function Detalhe({ a }) {
 
   useEffect(() => {
     let vivo = true;
-    setSerie(null);
-    get(`/api/ativos/${a.ticker}/serie?intervalo=${intervalo}`).then((d) => vivo && setSerie(d.serie)).catch(() => vivo && setSerie([]));
+    get(`/api/ativos/${a.ticker}/serie?intervalo=${intervalo}`)
+      .then((d) => vivo && setResSerie({ chave, dados: d.serie }))
+      .catch(() => vivo && setResSerie({ chave, dados: [] }));
     return () => { vivo = false; };
-  }, [a.ticker, intervalo]);
+  }, [a.ticker, intervalo, chave]);
 
   useEffect(() => {
     let vivo = true;
-    setIa(null); setErroIa(null);
     get(`/api/ativos/${a.ticker}/analise`).then((d) => vivo && setIa(d)).catch((e) => vivo && setErroIa(e.message));
     return () => { vivo = false; };
   }, [a.ticker]);
@@ -296,7 +341,7 @@ export default function Dashboard() {
         if (vivo) setErro(e.message);
       }
     };
-    carregar();
+    void carregar();
     const id = setInterval(carregar, 60000);
     return () => { vivo = false; clearInterval(id); };
   }, []);
