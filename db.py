@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 import pandas as pd
-from sqlalchemy import create_engine, String, Float, Integer, DateTime, JSON
+from sqlalchemy import create_engine, String, Float, Integer, BigInteger, Text, DateTime, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from dotenv import load_dotenv
 
@@ -27,7 +27,7 @@ class Cotacao(Base):
     media_movel_7d: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 class Analise(Base):
-    __tablename__= "analises"
+    __tablename__ = "analises"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     resumo: Mapped[str] = mapped_column(Text)
@@ -37,7 +37,7 @@ class Analise(Base):
 def criar_tabelas():
     Base.metadata.create_all(engine)
 
-def salvar_resultado(df_final, resumo, variacoes):
+def salvar_resultado(df_final, resumo, variacoes, detalhes):
     session = SessionLocal()
     try:
         session.query(Cotacao).delete()
@@ -55,6 +55,3 @@ def salvar_resultado(df_final, resumo, variacoes):
         session.commit()
     finally:
         session.close()
-
-
-

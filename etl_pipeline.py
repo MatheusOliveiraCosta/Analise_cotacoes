@@ -9,10 +9,10 @@ from indicadores import ATIVOS, calcular
 
 load_dotenv()
 
-def montar_prompt(variacoes):
+def montar_prompt(metricas):
     linhas = [
         f"- {m['ticker']} ({m['nome']}): preço {m['preco']} {m['moeda']}, "
-        f"variaçãoi do dia {m['var_pct']}%, RSI14 {m['rsi']}, MA20 {m['ma20']}, "
+        f"variação do dia {m['var_pct']}%, RSI14 {m['rsi']}, MA20 {m['ma20']}, "
         f"MA50 {m['ma50']}, volume z-score {m['vol_z']}, sinal técnico {m['sinal']}"
         for m in metricas
     ]
@@ -22,8 +22,8 @@ def montar_prompt(variacoes):
 Dados de hoje:
 {dados}
 
-Responda SOMENTE um JSON com uma chave para cada ticker acima neste formato:
-{{"TICKER": {{"resumo": "1-2 frases sobre o movimento", "drivers": "1-2 frases sobr oque os indicadores mostram", "risco": "1-2 frases sobre riscos" }}}}
+Responda SOMENTE um JSON com uma chave para cada ticker acima, neste formato:
+{{"TICKER": {{"resumo": "1-2 frases sobre o movimento", "drivers": "1-2 frases sobre o que os indicadores mostram", "risco": "1-2 frases sobre riscos"}}}}
 
 Use apenas os dados fornecidos. Não invente notícias, eventos ou números."""
 
@@ -40,9 +40,12 @@ def chamar_llm(prompt):
 
 def extrair_dados(ticker):
     print(f"Extraindo dados de: {ticker}...")
+    
     # Baixa o histórico dos últimos 6 meses
     ativo = yf.Ticker(ticker)
     df = ativo.history(period="6mo")
+    if df.empty:
+            raise ValueError(f"Sem dados para '{ticker}'. Confira o código do ativo no Yahoo Finance.")
     
     # O yfinance traz várias colunas. Vamos manter só as que importam para o nosso BD
     df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
@@ -82,7 +85,7 @@ def transformar_dados(df, ticker_nome):
 
 def gerar_analise():
     criar_tabelas()
-    dfs = [transforar_dados(extrair_dados(t), t) for t in ATIVOS]
+    dfs = [transformar_dados(extrair_dados(t), t) for t in ATIVOS]
     df_final = pd.concat(dfs, ignore_index=True)
 
     metricas = [calcular(g, t) for t, g in df_final.groupby("ativo")]
@@ -90,12 +93,9 @@ def gerar_analise():
 
     variacoes = {m["ticker"]: m["var_pct"] for m in metricas}
     resumo = "\n".join(f"{t}: {d.get('resumo', '')}" for t, d in detalhes.items())
-    salvar_resultado (df_final, resumo, variacoes, detalhes)
+    salvar_resultado(df_final, resumo, variacoes, detalhes)
 
-    return {
-        "resumo": resumo,
-        "variacoes": variacoes_nativas
-    }
+    return {"resumo": resumo, "variacoes": variacoes}
 
 # --- FLUXO PRINCIPAL ---
 if __name__ == "__main__":

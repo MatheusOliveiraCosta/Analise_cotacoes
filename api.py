@@ -20,8 +20,8 @@ DIAS = {"1M": 21, "3M": 63, "6M": 126}
 def carregar_cotacoes():
     df = pd.read_sql(select(Cotacao).order_by(Cotacao.data_pregao), engine)
     if df.empty:
-        raise HTTPException(404, "Banco vazio. Rode o etl_pipeline primeiro")
-    return df.rename(columns={"data_pregao": "data", "volume_negociado": "volujme"})
+        raise HTTPException(404, "Banco vazio. Rode o etl_pipeline.py primeiro.")
+    return df.rename(columns={"data_pregao": "data", "volume_negociado": "volume"})
 
 def ultima_analise():
     with SessionLocal() as session:
@@ -44,7 +44,7 @@ def analise():
 @app.get("/api/ativos")
 def listar():
     df = carregar_cotacoes()
-    return [calcular(g, t) for t, g in df.groupby("ativo") if len(g) >=2]
+    return [calcular(g, t) for t, g in df.groupby("ativo") if len(g) >= 2]
 
 @app.get("/api/ativos/{ticker}/serie")
 def serie(ticker: str, intervalo: str = "1M"):
